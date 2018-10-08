@@ -1,20 +1,20 @@
 defmodule Discuss.CommentsChannel do 
   use Discuss.Web, :channel
-  alias Discuss.Topic
+  alias Discuss.{Comment,Topic}
 
-  def join("comments:" <> topic_id,_params, socket) do
+  def join("comments:" <> topic_id, _params, socket) do
     topic_id = String.to_integer(topic_id)
     topic = Repo.get(Topic, topic_id)
 
-    {:ok, %{}, asign(socket, :topic, topic)}
+    {:ok, %{}, assign(socket, :topic, topic)}
   end
 
-  def handle_in(name, %{content => content}, socket) do
+  def handle_in(name, %{"content" => content}, socket) do
     topic = socket.assigns.topic
 
     changeset = 
-      Topic
-      |> build_assoc(:contents)
+      topic
+      |> build_assoc(:comments)
       |> Comment.changeset(%{content: content})
 
     case Repo.insert(changeset) do
@@ -23,7 +23,5 @@ defmodule Discuss.CommentsChannel do
       {:error, _reason} ->
         {:reply, {:error, %{errors: changeset}}, socket}
     end
-
-    {:reply, :ok, socket}
   end
 end
